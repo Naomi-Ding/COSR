@@ -193,7 +193,7 @@ To analyze a real study (e.g. using ADNI or A4 data):
 ---
 
 
-📌 Citation and licensing information can be added once the AOAS paper is published / accepted.
+📌 Citation and licensing information can be added once the paper is published / accepted.
 
 <!-- ## Citation -->
 
@@ -204,4 +204,5 @@ To analyze a real study (e.g. using ADNI or A4 data):
 <!-- > Ding, S., et al. (2025). *A Novel Bayesian Framework Uncovering Brain Connectivity-to-Shape Relationship in Preclinical Alzheimer’s Disease*. *Annals of Applied Statistics* (submitted / in revision). -->
 
 <!-- You may also include a DOI or arXiv reference once available. -->
+
 
