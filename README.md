@@ -68,26 +68,14 @@ Key methodological features:
 ```bash
 COSR/
 │
-├── example_simu/        # Simulation example scripts and toy data
+├── example_simu/        # Scripts for reproducing toy simulations.
 ├── COSR_MCMC_BF.m       # MCMC under Bayesian Factor error structure
 ├── COSR_MCMC_IND.m      # MCMC under Independent error structure
 ├── COSR_VB_IND.m        # Variational Bayes / CAVI inference
 ├── COSR_wrapper.m       # Wrapper to call COSR variants
-├── trandn.m             # Utility for truncated normal sampling
+├── trandn.m             # Utility for truncated normal sampling in MCMC
 └── README.md            # This file
 ```
-
-- **example_simu/** — scripts for reproducing toy simulations.
-
-- **COSR_MCMC_BF.m** — MCMC sampler with Bayesian factor error specification.
-
-- **COSR_MCMC_IND.m** — MCMC sampler with independent error structure.
-
-- **COSR_VB_IND.m** — Variational Bayes inference (faster, scalable).
-
-- **COSR_wrapper.m** — unified entry point for running COSR.
-
-- **trandn.m** — helper function for truncated normal sampling in MCMC.
 
 ---
 ## Quick Start
@@ -204,5 +192,6 @@ To analyze a real study (e.g. using ADNI or A4 data):
 <!-- > Ding, S., et al. (2025). *A Novel Bayesian Framework Uncovering Brain Connectivity-to-Shape Relationship in Preclinical Alzheimer’s Disease*. *Annals of Applied Statistics* (submitted / in revision). -->
 
 <!-- You may also include a DOI or arXiv reference once available. -->
+
 
 
