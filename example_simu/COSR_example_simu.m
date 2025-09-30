@@ -20,8 +20,10 @@ delta = 0.5;
 tau_pattern = 1;
 
 % Call the available data generator (simu_data_gen_2d)
-[A, M, x, Psi, Lambda_sqrt, B_true, BM, Gamma_x, tau_true, Z_true, w_true, gamma1_true, gamma2_true, sigma2_e_actual, SNR_A, SNR_BM] = ...
-    simu_data_gen_2d(n, V, H, p, s, sigma2_e, sigma2_gamma, delta, tau_pattern, seed, false, 0.95, 20, 1);
+[A, M, x, Psi, Lambda_sqrt, B_true, BM, Gamma_x, tau_true, Z_true, w_true, ...
+    gamma1_true, gamma2_true, sigma2_e_actual, SNR_A, SNR_BM, Sv] = ...
+    simu_data_gen_2d(n, V, H, p, s, sigma2_e, sigma2_gamma, delta, ...
+    tau_pattern, seed, false, 0.95, 20, 1);
 
 
 % split data
@@ -65,7 +67,7 @@ params.Lambda_sqrt = Lambda_sqrt(1:Lest);
 
 % Run wrapper (MCMC_IND for easier comparision with tau_true)
 disp('Running COSR_wrapper (MCMC_IND) on generated data...');
-result = COSR_wrapper('MCMC_IND', A_train, M_train, x_train, Psi(1:Lest,:), Lambda_sqrt(1:Lest), params);
+result = COSR_wrapper('MCMC_IND', A_train, M_train, [], x_train, params);
 
 % Extract estimates
 est = result.estimates;

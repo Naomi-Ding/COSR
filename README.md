@@ -2,196 +2,182 @@
 
 ***A Novel Bayesian Framework Uncovering Brain Connectivity-to-Shape Relationship in Preclinical Alzheimer’s Disease***
 
-This repository hosts the implementation of **COSR**, a Bayesian modeling framework designed to relate **brain connectivity patterns** to **spatially varying structural (shape) features**. The method is motivated by applications to preclinical Alzheimer’s disease (AD), but is broadly applicable to multimodal neuroimaging problems where connectivity-to-shape (or connectivity-to-geometry) relationships are of interest.
+This repository contains the implementation of **COSR**, a Bayesian modeling framework designed to relate **brain connectivity patterns** (matrix-valued outcome) to **spatially varying structural (shape) features**. 
+Implementations include full Bayesian MCMC (two variants) and a Variational Bayes alternative for scalable approximate inference.
 
-<!-- --- -->
-
-<!-- ## Table of Contents
-- [COSR: Connectivity-on-Shape Regression](#cosr-connectivity-on-shape-regression)
-  - [Table of Contents](#table-of-contents)
-  - [Repository Structure](#repository-structure)
-  - [Quick Start](#quick-start)
-  - [Usage \& Workflow](#usage--workflow)
-    - [Example / Simulation](#example--simulation)
-    - [Inference Options](#inference-options)
-    - [Outputs \& Interpretation](#outputs--interpretation)
-    - [Dependencies \& Environment](#dependencies--environment) -->
-<!-- - [License & Citation](#license--citation)  
-- [Contact](#contact)   -->
-
-<!-- --- -->
-
-<!-- ## Background & Motivation
-
-In many neuroimaging studies, one seeks to understand how **functional connectivity networks** (e.g. edge weights between brain regions) relate to **structural brain properties**, such as regional volumes or local shape deformations. However:
-
-- Traditional approaches often treat connectivity and structure separately.
-- They may ignore spatial dependencies on structural surfaces or lack uncertainty quantification.
-- A connectivity-to-shape mapping would allow one to localize *which points or subregions of a brain surface* are associated with particular connectivity edges.
-
-COSR is designed to fill this methodological gap:
-
-1. **Integrative modeling**: It regresses *pointwise structural shape deformation* on connectivity predictors.
-2. **Spatial structure**: It encodes smoothness (spatial correlation) across the shape surface.
-3. **Sparsity / Edge selection**: It allows automatic selection of which connectivity edges are relevant for each structural location.
-4. **Uncertainty quantification**: Via Bayesian inference (MCMC or variational) one obtains credible intervals, posterior inclusion probabilities, etc.
-
-In the Alzheimer’s setting, this helps to detect *early shape signatures* tied to connectivity alterations in preclinical disease. -->
-
-<!-- ## Model & Methodology
-
-At a high level, the COSR model posits, for each subject:
-
-\[
-y_i(\mathbf{s}) = \sum_{e} x_{i,e} \, \tau_e(\mathbf{s}) + \varepsilon_i(\mathbf{s}),
-\]
-
-where:
-
-- \( y_i(\mathbf{s}) \) = structural shape deformation (or measure) at spatial location \(\mathbf{s}\) on a surface mesh,
-- \( x_{i,e} \) = connectivity feature (edge) \(e\) for subject \(i\),
-- \( \tau_e(\mathbf{s}) \) = spatially varying coefficient function for edge \(e\),
-- \(\varepsilon_i(\mathbf{s})\) = noise/error term (spatial residual).
-
-Key methodological features:
-
-- **Hierarchical priors** on \(\tau_e(\mathbf{s})\) that encourage **local smoothness over \(\mathbf{s}\)** (e.g. via Gaussian Markov random fields or spatial kernels) and **edge-level sparsity** (e.g. spike-and-slab, shrinkage priors).
-- **Posterior inference**:
-  - **MCMC samplers** (for gold-standard full Bayesian inference),
-  - **Variational / coordinate-ascent methods** (for scalability in larger data or high-dimensional settings).
-- **Regularization / hyperparameter tuning** can be handled via empirical Bayes or cross-validation within the framework. -->
-
+Although motivated by applications to preclinical Alzheimer’s disease (AD), the methods are broadly applicable to other multimodal neuroimaging problems where connectivity-to-shape (or connectivity-to-image) relationships are of interest. 
 
 ---
+## Repository structure
 
-## Repository Structure
-```bash
-COSR/
-│
-├── example_simu/        # Scripts for reproducing toy simulations.
-├── COSR_MCMC_BF.m       # MCMC under Bayesian Factor error structure
-├── COSR_MCMC_IND.m      # MCMC under Independent error structure
-├── COSR_VB_IND.m        # Variational Bayes / CAVI inference
-├── COSR_wrapper.m       # Wrapper to call COSR variants
-├── trandn.m             # Utility for truncated normal sampling in MCMC
-└── README.md            # This file
-```
+Top-level files and their purpose:
+
+- `COSR_wrapper.m` — unified entry point that validates inputs and dispatches to the selected inference routine.
+- `COSR_MCMC_BF.m` — MCMC sampler using a Bayesian factor model for correlated residuals.
+- `COSR_MCMC_IND.m` — MCMC sampler assuming independent residuals.
+- `COSR_VB_IND.m` — Variational Bayes / coordinate ascent implementation (scalable, approximate).
+- `trandn.m` — truncated normal sampler used by MCMC routines.
+- `example_simu/` — small scripts and helper functions for generating toy data and running examples.
 
 ---
 ## Quick Start
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/COSR.git
+   git clone https://github.com/Naomi-Ding/COSR.git
    cd COSR
    ```
-2. Open MATLAB and add the project folder to your path.
-3. Run the example simulation:
+2. Open MATLAB and add the COSR folder to your MATLAB path.
+    ```matlab
+    addpath('path_to_COSR');
+    ```
+3. Run the example simulation to generate toy data and run a small experiment:
    ```matlab
    example_simu/COSR_example_simu.m
    ```
 4. Explore results (tables, and coefficient maps) in the `example_simu/` directory.
-
+  The example is intentionally small so it runs quickly as a smoke test. Inspect variables in the workspace after the run, and result structures with estimates and diagnostics.
 --- 
 
 
+## Dependencies
+
+- MATLAB (tested with R2019b – R2024a).
+- Basic MATLAB toolboxes (Statistics, Linear Algebra). 
+- No external packages are required for the example scripts included.
+
+
+---
+
 ## Usage & Workflow
-The main entry point is `COSR_wrapper.m`, which dispatches to one of the three COSR implementations based on the specified `error_model`. The wrapper handles input validation, default parameter settings, and output formatting.
+The main entry point is **``COSR_wrapper.m``**, which dispatches to one of the three COSR implementations based on the specified `error_model`. It accepts either positional arguments or a `params` struct (recommended for reproducibility). The wrapper handles input validation, default parameter settings, random initialization, and forwards to the chosen implementation.
 
-### Example / Simulation
 
-**To run a toy simulation:**
+### Data contract & calling patterns
 
-1. Add the COSR folder to your MATLAB path. (e.g., `addpath('path_to_COSR')`).
-2. Navigate to `example_simu/`.
-3. Execute the provided script (e.g. `COSR_example_simu.m`) which:
-   - Simulates synthetic connectivity \(A\) and shape predictor \(M_i(s)\),
-   - Randomly splits data into training (80%), validation (10%), and testing (10%) sets,
-   - Runs COSR inference on training data, based on chosen method (MCMC_BF, MCMC_IND, or VB),
-   - Compares recovered vs. truth shape-FC coefficients \(\tau_{h,h'}(s)\), and community membership \(Z\).
-   - Produces performance metrics (MSE, Adjusted rand index (ARI), Recall, Precision, F1).
-4. Examine output summary tables.
+COSR supports two common calling patterns. Provide either:
 
-<!-- This lets users test that the pipeline is working before applying to real data. -->
+1) Spatial coordinates `Sv` and let the wrapper compute basis functions automatically:
+
+  ```matlab
+  COSR_wrapper(error_model, A, M, Sv, x, params)
+  ```
+
+2) Precompute basis functions and pass them in a `params` struct (in this case `Sv` may be `[]`):
+
+```matlab
+params.Psi = Psi; params.Lambda_sqrt = Lambda_sqrt; % precomputed
+COSR_wrapper(error_model, A, M, [], x, params)
+```
+
+where the other core inputs are:
+- `error_model` : string, one of {`'MCMC_BF'`, `'MCMC_IND'`, `'VB_IND'`} to select the inference method.
+- `A` : (V, V, n) symmetric connectivity matrices for n subjects (zeros on diagonal).
+- `M` : (n, S) matrix of shape measurements evaluated at S spatial locations (each row is a subject).
+- `Sv` : (S, d) spatial coordinates of the S locations (e.g., mesh vertices (d=3) or 2D contours (d=2)) where shape is measured. Pass `[]` if providing `Psi` and `Lambda_sqrt` in `params`.
+  1. If you pass `Sv`, the wrapper will compute an RBF kernel and extract eigenvectors/eigenvalues to form `Psi` and `Lambda_sqrt` (unless you override in `params`). 
+  2. If you prefer to compute a custom basis externally (e.g., Laplace-Beltrami eigenfunctions), pass them via `params.Psi` and `params.Lambda_sqrt` and set `Sv = []`.
+- `x` : (n, p) optional subject-level covariates (use `[]` when none).
+- `params`: optional struct to control MCMC/VB settings, priors, and diagnostic output. The wrapper auto-fills sensible defaults when fields are omitted.
+Note: 
+  - `V` is the number of nodes in the connectivity matrix, 
+  - `S` is the number of spatial locations (e.g., mesh vertices),  
+  - `p` is the number of covariates (including intercept if desired).
+
+
+
+
+
+*See the header of `COSR_wrapper.m` for more details on argument shapes and optional parameters.*
+
+
+
+### Example: programmatic call (minimal)
+- **Data preparation**: load or generate `A`, `M`, `x`, and either `Sv` or precompute `Psi` and `Lambda_sqrt`.
+  ```matlab
+  % generate toy data:
+  seed = 2025;
+  rng(seed);
+  % Small settings for a quick smoke test
+  V = 20;   % nodes (small)
+  n = 40;   % subjects
+  s = 6;    % image side length (s*s = S locations)
+  S = s * s;
+  p = 2; H = 3;
+  % generator options (use the independent-error generator here)
+  sigma2_e = 0.5; sigma2_gamma = 1; delta = 0.5; tau_pattern = 1;
+  % Call the available data generator (simu_data_gen_2d)
+  [A, M, x, Psi, Lambda_sqrt, B_true, BM, Gamma_x, tau_true, Z_true, w_true, ...
+      gamma1_true, gamma2_true, sigma2_e_actual, SNR_A, SNR_BM, Sv] = ...
+      simu_data_gen_2d(n, V, H, p, s, sigma2_e, sigma2_gamma, delta, ...
+      tau_pattern, seed, false, 0.95, 20, 1);
+  ```
+- **Example A: provide spatial coordinates `Sv` and let wrapper compute `Psi`/`Lambda_sqrt`**
+  ```matlab
+  % Set random seed for reproducibility
+  rng(123);
+  params.error_model = 'MCMC_IND';
+  params.nsamples = 2000; params.burnin = 500; params.thinning = 2;
+  result = COSR_wrapper(params.error_model, A, M, Sv, x, params);
+  estimates = result.estimates; samples = result.samples;
+  ```
+- **Example B: precompute basis functions and pass them via params (`Sv` optional / pass `[]`):**
+  ```matlab
+  % Set random seed for reproducibility
+  rng(123);
+  params.error_model = 'VB_IND';
+  params.nsamples = 1000; 
+  params.Psi = Psi; params.Lambda_sqrt = Lambda_sqrt;
+  result = COSR_wrapper(params.error_model, A, M, [], x, params);
+  estimates = result.estimates; 
+  ```
+
+
+### Inference options
+
+- **``MCMC_BF``**: Full MCMC using a Bayesian factor model for correlated residuals — suited for moderate-sized problems and when modeling spatial residual correlation is important.
+- **``MCMC_IND``**: MCMC assuming independent residuals — simpler and faster than BF variant.
+- **``VB_IND``**: Variational Bayes / CAVI — fast, approximate inference for large-scale or high-dimensional problems.
+
+
+### Outputs & interpretation
+
+**Primary outputs produced by the COSR wrapper and inference functions:**
+- `estimates` : point estimates (spatial coefficient maps, community assignments Z, effect sizes, etc.).
+- `samples` : retained MCMC samples when using an MCMC method (for posterior summaries and credible intervals).
+- `fitted_errors` : diagnostic objects from the example diagnostic utilities.
+
+**Analyses typically focus on:**
+
+- **Spatially varying coefficient maps ($\tau_{h,h'}(s)$)** that show where on the surface a given shape measurement is associated with the connectivity between subnetworks $h$ and $h'$.
+- **Posterior inclusion probabilities (PIPs)** to identify the selection probabilities of associations, quantifying the uncertainty in the estimated effects.
+- **Community / cluster assignments (Z)** which summarize modularity of nodes.
+
+Visualize coefficient maps on your mesh/surface of choice (FreeSurfer, MATLAB patch/trisurf, or export to neuroimaging viewers).
 
 ---
 
-<!-- ## Real Data Application
+## Example simulation (what the example does)
 
-To analyze a real study (e.g. using ADNI or A4 data):
+[`example_simu/COSR_example_simu.m`](example_simu/COSR_example_simu.m) performs a quick pipeline:
 
-1. Prepare connectivity matrices and shape measurements for all subjects.
-2. Organize into compatible MATLAB format (e.g. `.mat` files).
-3. Call `COSR_wrapper.m` or the specific inference function, passing:
-   - `A` (connectivity matrix)
-   - `M(s)` (shape predictor)
-   - Hyperparameter settings
-   - Inference choice (MCMC_BF, MCMC_IND, or VB),
-4. Obtain outputs: coefficient estimates, community membership, PIPs, credible intervals, etc.
-5. Visualize effects using appropriate mesh plotting tools (e.g. connect with FreeSurfer surface, or export to external viewers).
+  1. Generates synthetic connectivity matrices `A` and shape observations `M` using `simu_data_gen_2d.m`.
+  2. Splits data into training (80%), validation (10%), and testing (10%) sets.
+  3. Runs a COSR routine on training data, based on chosen method (`MCMC_BF`, `MCMC_IND`, or `VB_IND`).
+  4. Compares recovered vs. true coefficients /community assignments, computes performance evaluation metrics (MSE, Adjusted rand index (ARI), Recall, Precision, F1), and produces diagnostic summaries.
 
---- -->
-
-### Inference Options
-
-- **MCMC (BF / IND)**  
-  - Full Bayesian inference, slower but usually more accurate uncertainty quantification.
-  - Useful for low dimensions/sample sizes.
-  <!-- - Slower but more accurate, better to explore full posterior uncertainty. -->
-  <!-- - Useful for moderate dimension / sample size. -->
-
-- **Variational Bayes / CAVI (VB, IND)**  
-  - Faster, scalable inference via mean-field approximation and coordinate ascent variational inference.
-  - Useful for high-dimensional settings or large-scale data.
-  <!-- - May underestimate posterior variance; good for initial screening. -->
-
-<!-- - **Hyperparameter tuning**  
-  - Use cross-validation, For slab variances or smoothing strength, one can use cross-validation, empirical Bayes, or holdout likelihood. -->
-
-<!-- - **Convergence diagnostics**  
-  - For MCMC: monitor trace plots, effective sample size, Gelman–Rubin diagnostics.
-  - For VB: monitor ELBO progression.
-
-- **Memory & computation**  
-  - The method may be expensive for large meshes or many edges—consider reducing basis dimension or preselecting edges. -->
+*Open the example script to change dimensions or noise settings for more stress testing.*
 
 ---
+## Troubleshooting & tips
 
-### Outputs & Interpretation
+- Dimension mismatch errors: ensure `A` is (V,V,n) and symmetric; `M` must be (n,S). 
+- Slow runs: reduce the number of basis functions `L` (fewer spatial basis) or use `VB_IND` for faster approximate inference.
+- Reproducibility: set seed via `rng(2025)` before running simulations or MCMC.
+- Memory: large meshes (S large) and many edges (V large) increase memory — only `VB_IND` is recommended for large-scale problems.
 
-**Key outputs from COSR include:**
 
-- **Estimated spatially varying coefficient maps** \(\hat{\tau}_{h,h'}(\mathbf{s})\): spatial patterns of how shape features are associated with connectivity.
-- **Posterior inclusion probabilities (PIPs)**: the selection probabilities for each subnetwork-level vertex-edge pair, quantifying confidence in shape-FC associations.
-<!-- - **Credible bands / intervals** for \(\tau_e(\mathbf{s})\). -->
-- **Subregion-specific connectivity effects**: identifying which subregional shape features are linked to functional connectivity.
-- **Edge ranking / selection summary**: prioritizing which connectivity edges are robustly associated with shape.
-- **Visualization-ready maps**: overlay coefficient estimates on surface meshes.
 
 ---
-
-### Dependencies & Environment
-
-- **Matlab** (tested with R2019b – R2024a)
-- Basic MATLAB toolboxes (Statistics, Linear Algebra)
-- No external packages required; `trandn.m` is included.
-
-<!-- To run the example simulation, ensure paths are properly set (e.g. add project folder to MATLAB path). -->
-
----
-
 
 📌 Citation and licensing information can be added once the paper is published / accepted.
-
-<!-- ## Citation -->
-
-<!-- This project is released under the **MIT License**. See `LICENSE` for details. -->
-
-<!-- If you use COSR in your work, please cite: -->
-
-<!-- > Ding, S., et al. (2025). *A Novel Bayesian Framework Uncovering Brain Connectivity-to-Shape Relationship in Preclinical Alzheimer’s Disease*. *Annals of Applied Statistics* (submitted / in revision). -->
-
-<!-- You may also include a DOI or arXiv reference once available. -->
-
-
-
